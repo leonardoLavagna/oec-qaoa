@@ -1,0 +1,37 @@
+name: ideal-qaoa
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/run_ideal_qaoa.py"
+      - ".github/workflows/ideal_qaoa.yml"
+      - "src/oec_qaoa/qaoa.py"
+      - "src/oec_qaoa/benchmarks.py"
+      - "src/oec_qaoa/path_qubo.py"
+
+jobs:
+  qaoa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: python -m pip install --upgrade pip && pip install -e .
+
+      - name: Run ideal-state QAOA benchmarks
+        run: python scripts/run_ideal_qaoa.py
+
+      - name: Upload QAOA tables
+        uses: actions/upload-artifact@v4
+        with:
+          name: ideal-qaoa-results
+          path: results/qaoa/ideal_qaoa_*.csv
