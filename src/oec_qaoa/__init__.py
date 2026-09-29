@@ -1,7 +1,7 @@
 """Tools for the OEC-QAOA numerical study."""
 
 from .edge_qubo import QUBOModel, QUBOSolution, build_edge_qubo, solve_qubo_exact
-from .instances import canonical_c1
+from .instances import canonical_c1, canonical_c2
 from .model import Edge, OECInstance, Service, StateNode
 
 __all__ = [
@@ -13,5 +13,6 @@ __all__ = [
     "StateNode",
     "build_edge_qubo",
     "canonical_c1",
+    "canonical_c2",
     "solve_qubo_exact",
 ]
