@@ -1,9 +1,7 @@
 """Exact classical reference formulation for small OEC instances.
 
-The reference solver is deliberately independent of the later QUBO machinery.
-It uses SciPy's mixed-integer interface, backed by HiGHS, and therefore provides
-an open-source baseline for the equivalence tests developed in the subsequent
-notebooks.
+The solver uses SciPy's mixed-integer interface backed by HiGHS and is kept
+independent of the QUBO implementation.
 """
 
 from __future__ import annotations
