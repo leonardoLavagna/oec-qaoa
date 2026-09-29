@@ -30,7 +30,7 @@ The first implementation milestone is intentionally classical. It establishes de
 ## Current status
 
 - [x] Repository and reproducibility baseline
-- [ ] Canonical OEC reference model
+- [x] Canonical OEC reference model
 - [ ] Direct edge-QUBO
 - [ ] Path-based reduction
 - [ ] Resource scaling
