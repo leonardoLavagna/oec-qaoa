@@ -1,0 +1,39 @@
+name: qaoa-benchmark-selection
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/select_qaoa_benchmarks.py"
+      - ".github/workflows/qaoa_benchmark_selection.yml"
+      - "src/oec_qaoa/generators.py"
+      - "src/oec_qaoa/ilp.py"
+      - "src/oec_qaoa/path_reduction.py"
+      - "src/oec_qaoa/path_qubo.py"
+      - "src/oec_qaoa/metrics.py"
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: python -m pip install --upgrade pip && pip install -e .
+
+      - name: Select exact-optimum-known benchmarks
+        run: python scripts/select_qaoa_benchmarks.py
+
+      - name: Upload benchmark tables
+        uses: actions/upload-artifact@v4
+        with:
+          name: qaoa-benchmark-selection
+          path: results/qaoa/*.csv
