@@ -1,9 +1,5 @@
-"""Execute the resource-scaling study used by Notebook 04.
+"""Execute the resource-scaling analysis used by Notebook 04."""
 
-The script mirrors the notebook sweeps in a non-interactive form so that the
-numerical outputs can be produced in CI and reviewed before they are transferred
-to the manuscript.
-"""
 
 from __future__ import annotations
 
