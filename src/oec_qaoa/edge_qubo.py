@@ -1,9 +1,7 @@
 """Manual edge-based QUBO construction for the OEC model.
 
-The module implements the formulation derived in the manuscript rather than
-delegating the conversion to a generic optimization wrapper.  This makes the
-semantic variables, slack variables, penalty coefficients and quadratic
-couplings directly accessible to the resource analysis performed later.
+Semantic variables, slack variables, penalty coefficients and quadratic
+couplings remain explicit so they can be inspected and measured directly.
 """
 
 from __future__ import annotations
