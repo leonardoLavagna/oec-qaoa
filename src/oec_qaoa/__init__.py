@@ -1,7 +1,7 @@
 """Tools for the OEC-QAOA numerical study."""
 
 from .edge_qubo import QUBOModel, QUBOSolution, build_edge_qubo, solve_qubo_exact
-from .generators import SyntheticConfig, synthetic_relay_instance
+from .generators import SyntheticConfig, compact_constrained_instance, synthetic_relay_instance
 from .instances import canonical_c1, canonical_c2
 from .metrics import QUBOResourceMetrics, qubo_resource_metrics
 from .model import Edge, OECInstance, Service, StateNode
@@ -36,6 +36,7 @@ __all__ = [
     "build_edge_qubo",
     "build_path_qubo",
     "candidate_sets",
+    "compact_constrained_instance",
     "canonical_c1",
     "canonical_c2",
     "decomposition_gap",
