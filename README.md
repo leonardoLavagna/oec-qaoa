@@ -33,8 +33,8 @@ The first implementation milestone is intentionally classical. It establishes de
 - [x] Canonical OEC reference model
 - [x] Direct edge-QUBO
 - [x] Path-based reduction
-- [ ] Resource scaling
-- [ ] QAOA benchmarks
+- [x] Resource scaling
+- [x] QAOA benchmarks
 - [ ] Finite-sampling/noise analysis
 
 The manuscript remains frozen while the simulations are developed. Numerical statements will be transferred to the paper only after the corresponding implementation and regression checks have been reviewed.
