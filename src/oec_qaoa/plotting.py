@@ -1,4 +1,4 @@
-"""Paper-facing figures and tables from validated numerical outputs."""
+"""Figures and summary tables from validated numerical outputs."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def plot_resource_scaling(
     scaling: pd.DataFrame,
     output_dir: Path,
 ) -> None:
-    """Create paper figures for logical-variable and coupling scaling."""
+    """Create logical-variable and coupling scaling figures."""
 
     output_dir = _prepare_output(output_dir)
     subset = scaling[scaling["sweep"] == "n_services"].copy()
@@ -312,13 +312,13 @@ def plot_connectivity(
     _save(fig, output_dir / "fig_connectivity_direct_support.png")
 
 
-def create_paper_tables(
+def create_summary_tables(
     ideal_summary: pd.DataFrame,
     finite_summary: pd.DataFrame,
     connectivity: pd.DataFrame,
     output_dir: Path,
 ) -> None:
-    """Write compact CSV tables intended for manuscript review."""
+    """Write compact CSV summary tables."""
 
     output_dir = _prepare_output(output_dir)
     benchmark_table().to_csv(
@@ -345,7 +345,7 @@ def create_paper_tables(
     )
 
 
-def build_all_paper_outputs(
+def build_all_outputs(
     results_root: Path,
     output_dir: Path,
 ) -> None:
@@ -362,4 +362,4 @@ def build_all_paper_outputs(
     plot_ideal_qaoa(ideal, output_dir)
     plot_finite_sampling(finite, output_dir)
     plot_connectivity(connectivity, output_dir)
-    create_paper_tables(ideal, finite, connectivity, output_dir)
+    create_summary_tables(ideal, finite, connectivity, output_dir)
