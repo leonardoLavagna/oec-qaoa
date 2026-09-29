@@ -147,6 +147,7 @@ def choose_benchmarks(pool: pd.DataFrame) -> pd.DataFrame:
         (pool["reduced_feasible"])
         & (pool["decomposition_gap"].abs() <= 1e-9)
         & (pool["logical_variables"].between(6, 20))
+        & (pool["reference_objective"] > 1e-9)
     ].copy()
 
     if faithful.empty:
@@ -161,6 +162,7 @@ def choose_benchmarks(pool: pd.DataFrame) -> pd.DataFrame:
 
     selected = []
     used_instances = set()
+    used_signatures = set()
 
     # Prefer K=2 when possible: it retains a non-trivial per-service choice
     # while remaining substantially smaller than the direct edge encoding.
@@ -181,10 +183,23 @@ def choose_benchmarks(pool: pd.DataFrame) -> pd.DataFrame:
         )
 
         for _, row in candidates.iterrows():
-            if row["instance"] in used_instances:
+            signature = (
+                int(row["n_services"]),
+                int(row["K"]),
+                int(row["logical_variables"]),
+                int(row["quadratic_couplings"]),
+                round(float(row["reference_objective"]), 9),
+                round(float(row["qubo_density"]), 9),
+                round(float(row["coefficient_dynamic_range"]), 9),
+            )
+            if (
+                row["instance"] in used_instances
+                or signature in used_signatures
+            ):
                 continue
             selected.append(row)
             used_instances.add(row["instance"])
+            used_signatures.add(signature)
             break
 
     # Add one second medium-scale instance if available so the QAOA conclusions
@@ -200,10 +215,23 @@ def choose_benchmarks(pool: pd.DataFrame) -> pd.DataFrame:
         ]
     )
     for _, row in medium.iterrows():
-        if row["instance"] in used_instances:
+        signature = (
+            int(row["n_services"]),
+            int(row["K"]),
+            int(row["logical_variables"]),
+            int(row["quadratic_couplings"]),
+            round(float(row["reference_objective"]), 9),
+            round(float(row["qubo_density"]), 9),
+            round(float(row["coefficient_dynamic_range"]), 9),
+        )
+        if (
+            row["instance"] in used_instances
+            or signature in used_signatures
+        ):
             continue
         selected.append(row)
         used_instances.add(row["instance"])
+        used_signatures.add(signature)
         break
 
     if not selected:
@@ -239,6 +267,7 @@ def main() -> None:
     faithful = pool[
         (pool["reduced_feasible"])
         & (pool["decomposition_gap"].abs() <= 1e-9)
+        & (pool["reference_objective"] > 1e-9)
     ]
     print(f"Zero-gap reductions: {len(faithful)}")
 
