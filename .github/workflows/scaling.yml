@@ -1,0 +1,39 @@
+name: resource-scaling
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/run_scaling.py"
+      - ".github/workflows/scaling.yml"
+      - "src/oec_qaoa/generators.py"
+      - "src/oec_qaoa/metrics.py"
+      - "src/oec_qaoa/edge_qubo.py"
+      - "src/oec_qaoa/path_qubo.py"
+      - "src/oec_qaoa/path_reduction.py"
+
+jobs:
+  scaling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package
+        run: python -m pip install --upgrade pip && pip install -e .
+
+      - name: Run resource-scaling study
+        run: python scripts/run_scaling.py
+
+      - name: Upload scaling tables
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-scaling-results
+          path: results/scaling/*.csv
