@@ -13,7 +13,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from oec_qaoa.generators import SyntheticConfig, synthetic_relay_instance
+from oec_qaoa.generators import (
+    SyntheticConfig,
+    compact_constrained_instance,
+    synthetic_relay_instance,
+)
 from oec_qaoa.ilp import solve_reference_ilp
 from oec_qaoa.metrics import qubo_resource_metrics
 from oec_qaoa.path_qubo import build_path_qubo
@@ -139,7 +143,112 @@ def build_pool() -> pd.DataFrame:
                                 }
                             )
 
-    return pd.DataFrame(records)
+
+
+    # Compact constrained family: designed specifically to retain a positive
+    # ground-processing optimum at statevector-manageable QUBO sizes.
+    for n_services in [2, 3, 4]:
+        for processing_capacity in [3.0, 4.0, 5.0, 6.0, 7.0]:
+            instance = compact_constrained_instance(
+                n_services=n_services,
+                processing_capacity_mb=processing_capacity,
+            )
+            reference = solve_reference_ilp(instance)
+            if not reference.success:
+                continue
+
+            all_paths = candidate_sets(instance)
+            max_available = min(
+                len(paths)
+                for paths in all_paths.values()
+            )
+
+            for k in K_VALUES:
+                if k > max_available:
+                    continue
+
+                retained = {
+                    service: paths[:k]
+                    for service, paths in all_paths.items()
+                }
+                reduced = solve_path_selection(instance, retained)
+
+                if not reduced.success:
+                    records.append(
+                        {
+                            "instance": instance.name,
+                            "family": "compact",
+                            "n_satellites": 3,
+                            "n_time_cycles": 3,
+                            "n_services": n_services,
+                            "capacity_factor": None,
+                            "processing_capacity": processing_capacity,
+                            "seed": 0,
+                            "K": k,
+                            "reference_objective": reference.objective,
+                            "reduced_feasible": False,
+                            "reduced_objective": None,
+                            "decomposition_gap": None,
+                            "relative_gap": None,
+                            "semantic_variables": None,
+                            "slack_variables": None,
+                            "logical_variables": None,
+                            "quadratic_couplings": None,
+                            "qubo_density": None,
+                            "max_degree": None,
+                            "coefficient_dynamic_range": None,
+                        }
+                    )
+                    continue
+
+                model = build_path_qubo(instance, retained)
+                metrics = qubo_resource_metrics(model)
+                gap = decomposition_gap(
+                    reference.objective,
+                    reduced,
+                )
+                relative_gap = (
+                    gap / abs(reference.objective)
+                    if abs(reference.objective) > 1e-12
+                    else (0.0 if abs(gap) <= 1e-12 else float("inf"))
+                )
+
+                records.append(
+                    {
+                        "instance": instance.name,
+                        "family": "compact",
+                        "n_satellites": 3,
+                        "n_time_cycles": 3,
+                        "n_services": n_services,
+                        "capacity_factor": None,
+                        "processing_capacity": processing_capacity,
+                        "seed": 0,
+                        "K": k,
+                        "reference_objective": reference.objective,
+                        "reduced_feasible": True,
+                        "reduced_objective": reduced.objective,
+                        "decomposition_gap": gap,
+                        "relative_gap": relative_gap,
+                        "semantic_variables": metrics.semantic_variables,
+                        "slack_variables": metrics.slack_variables,
+                        "logical_variables": metrics.logical_variables,
+                        "quadratic_couplings": metrics.quadratic_couplings,
+                        "qubo_density": metrics.qubo_density,
+                        "max_degree": metrics.max_degree,
+                        "coefficient_dynamic_range": (
+                            metrics.coefficient_dynamic_range
+                        ),
+                    }
+                )
+
+    frame = pd.DataFrame(records)
+    if "family" not in frame.columns:
+        frame["family"] = "synthetic"
+    else:
+        frame["family"] = frame["family"].fillna("synthetic")
+    if "processing_capacity" not in frame.columns:
+        frame["processing_capacity"] = None
+    return frame
 
 
 def choose_benchmarks(pool: pd.DataFrame) -> pd.DataFrame:
