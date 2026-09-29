@@ -1,6 +1,6 @@
 """Regression tests for the first canonical OEC instance."""
 
-from oec_qaoa import canonical_c1
+from oec_qaoa import canonical_c1, canonical_c2
 from oec_qaoa.ilp import solve_reference_ilp
 from oec_qaoa.validation import validate_reference_solution
 
@@ -22,3 +22,17 @@ def test_c1_downlink_is_saturated_at_optimum() -> None:
 
     assert solution.uses("h0", "tx_S1_G_t2_p1")
     assert solution.uses("h1", "tx_S1_G_t2_p0")
+
+
+
+def test_c2_reference_optimum_uses_distinct_relays() -> None:
+    instance = canonical_c2()
+    solution = solve_reference_ilp(instance)
+    report = validate_reference_solution(instance, solution)
+
+    assert solution.success
+    assert report.feasible
+    assert report.objective == 0.0
+    assert report.processing_nodes == {"h0": "R1", "h1": "R2"}
+    assert solution.uses("h0", "tx_S0_R1_t0_p0")
+    assert solution.uses("h1", "tx_S3_R2_t0_p0")
