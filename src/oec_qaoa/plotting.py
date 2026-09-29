@@ -113,7 +113,7 @@ def plot_reduction_ratios(
     ratios: pd.DataFrame,
     output_dir: Path,
 ) -> None:
-    """Plot path-to-edge logical-variable and coupling ratios."""
+    """Plot path-to-edge logical-variable and coupling ratios separately."""
 
     output_dir = _prepare_output(output_dir)
     subset = ratios[ratios["sweep"] == "n_services"].copy()
@@ -125,31 +125,35 @@ def plot_reduction_ratios(
         .reset_index()
     )
 
-    fig, ax = plt.subplots(figsize=(6.6, 4.2))
-    for k in sorted(grouped["K"].dropna().unique()):
-        frame = grouped[grouped["K"] == k]
-        ax.plot(
-            frame["sweep_value"],
-            frame["logical_variable_ratio"],
-            marker="o",
-            linewidth=1.6,
-            label=f"Variables, K={int(k)}",
-        )
-        ax.plot(
-            frame["sweep_value"],
-            frame["coupling_ratio"],
-            marker="x",
-            linestyle="--",
-            linewidth=1.3,
-            label=f"Couplings, K={int(k)}",
-        )
+    for metric, filename, ylabel in [
+        (
+            "logical_variable_ratio",
+            "fig_path_logical_variable_ratio.png",
+            "Path / edge logical-variable ratio",
+        ),
+        (
+            "coupling_ratio",
+            "fig_path_coupling_ratio.png",
+            "Path / edge coupling ratio",
+        ),
+    ]:
+        fig, ax = plt.subplots(figsize=(6.6, 4.2))
+        for k in sorted(grouped["K"].dropna().unique()):
+            frame = grouped[grouped["K"] == k]
+            ax.plot(
+                frame["sweep_value"],
+                frame[metric],
+                marker="o",
+                linewidth=1.6,
+                label=f"K={int(k)}",
+            )
 
-    ax.axhline(1.0, linewidth=1.0, linestyle=":")
-    ax.set_xlabel("Number of services")
-    ax.set_ylabel("Path / edge ratio")
-    ax.grid(True, alpha=0.25)
-    ax.legend(frameon=False, ncol=2)
-    _save(fig, output_dir / "fig_path_reduction_ratios.png")
+        ax.axhline(1.0, linewidth=1.0, linestyle=":")
+        ax.set_xlabel("Number of services")
+        ax.set_ylabel(ylabel)
+        ax.grid(True, alpha=0.25)
+        ax.legend(frameon=False)
+        _save(fig, output_dir / filename)
 
 
 def plot_ideal_qaoa(
@@ -176,8 +180,9 @@ def plot_ideal_qaoa(
             )
         ax.set_xlabel("QAOA depth p")
         ax.set_ylabel(ylabel)
+        ax.set_yscale("log")
         ax.set_xticks(sorted(summary["depth"].unique()))
-        ax.grid(True, alpha=0.25)
+        ax.grid(True, alpha=0.25, which="both")
         ax.legend(frameon=False)
         _save(fig, output_dir / filename)
 
@@ -282,6 +287,29 @@ def plot_connectivity(
     ax.grid(True, axis="y", alpha=0.25)
     ax.legend(frameon=False)
     _save(fig, output_dir / "fig_connectivity_distance.png")
+
+    support = connectivity.pivot(
+        index="benchmark_id",
+        columns="topology",
+        values="directly_supported_fraction",
+    )
+
+    fig, ax = plt.subplots(figsize=(6.6, 4.2))
+    for offset, topology in zip(offsets, order):
+        ax.bar(
+            [value + offset for value in x],
+            support[topology],
+            width=width,
+            label=topology.replace("_", " "),
+        )
+
+    ax.set_xticks(list(x), list(support.index))
+    ax.set_xlabel("Benchmark")
+    ax.set_ylabel("Directly supported interaction fraction")
+    ax.set_ylim(0.0, 1.05)
+    ax.grid(True, axis="y", alpha=0.25)
+    ax.legend(frameon=False)
+    _save(fig, output_dir / "fig_connectivity_direct_support.png")
 
 
 def create_paper_tables(
