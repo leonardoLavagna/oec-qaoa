@@ -38,5 +38,6 @@ The first implementation milestone is intentionally classical. It establishes de
 - [x] QAOA benchmarks
 - [x] Finite-sampling analysis
 - [x] Circuit/hardware-resource analysis
+- [x] Paper figures/tables
 
 The manuscript remains frozen while the simulations are developed. Numerical statements will be transferred to the paper only after the corresponding implementation and regression checks have been reviewed.
