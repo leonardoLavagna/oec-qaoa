@@ -9,12 +9,12 @@ notebooks.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
 
 import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, milp
 
 from .model import Edge, OECInstance, Service, StateNode
+from .preprocessing import service_subgraph_edges
 
 
 @dataclass(frozen=True)
@@ -32,41 +32,18 @@ class ReferenceSolution:
         return edge in self.selected_edges.get(service, ())
 
 
-def _admissible_edge(service: Service, edge: Edge) -> bool:
-    """Keep only transitions inside the generation/deadline window."""
-    return (
-        service.generation_time <= edge.source.time <= service.deadline
-        and service.generation_time <= edge.target.time <= service.deadline
-    )
-
-
-def _candidate_variables(
-    instance: OECInstance,
-) -> tuple[tuple[Service, Edge], ...]:
-    return tuple(
-        (service, edge)
-        for service in instance.services
-        for edge in instance.edges
-        if _admissible_edge(service, edge)
-    )
-
-
-def _flow_rhs(
-    instance: OECInstance,
-    service: Service,
-    node: StateNode,
-) -> float:
-    if node == instance.source_node(service):
-        return 1.0
-    if node == instance.sink_node(service):
-        return -1.0
-    return 0.0
-
-
 def solve_reference_ilp(instance: OECInstance) -> ReferenceSolution:
     """Solve the binary edge-flow OEC model exactly for a small instance."""
 
-    variables = _candidate_variables(instance)
+    service_edges = {
+        service.name: service_subgraph_edges(instance, service)
+        for service in instance.services
+    }
+    variables = tuple(
+        (service, edge)
+        for service in instance.services
+        for edge in service_edges[service.name]
+    )
     n_variables = len(variables)
     if n_variables == 0:
         raise ValueError("instance has no admissible decision variables")
@@ -83,19 +60,15 @@ def solve_reference_ilp(instance: OECInstance) -> ReferenceSolution:
     lower: list[float] = []
     upper: list[float] = []
 
-    # Flow conservation is imposed independently for every service.  Source and
+    # Flow conservation is imposed independently for every service. Source and
     # destination conditions are represented by non-zero right-hand sides.
     for service in instance.services:
-        relevant_nodes = {
-            node
-            for edge in instance.edges
-            if _admissible_edge(service, edge)
-            for node in (edge.source, edge.target)
-        }
-        relevant_nodes.add(instance.source_node(service))
-        relevant_nodes.add(instance.sink_node(service))
+        edges = service_edges[service.name]
+        nodes = sorted(
+            {node for edge in edges for node in (edge.source, edge.target)}
+        )
 
-        for node in sorted(relevant_nodes):
+        for node in nodes:
             row = np.zeros(n_variables, dtype=float)
             for j, (var_service, edge) in enumerate(variables):
                 if var_service.name != service.name:
@@ -105,7 +78,13 @@ def solve_reference_ilp(instance: OECInstance) -> ReferenceSolution:
                 if edge.target == node:
                     row[j] -= 1.0
 
-            rhs = _flow_rhs(instance, service, node)
+            if node == instance.source_node(service):
+                rhs = 1.0
+            elif node == instance.sink_node(service):
+                rhs = -1.0
+            else:
+                rhs = 0.0
+
             rows.append(row)
             lower.append(rhs)
             upper.append(rhs)
@@ -123,8 +102,8 @@ def solve_reference_ilp(instance: OECInstance) -> ReferenceSolution:
             upper.append(float(capacity))
 
     # Energy is charged to the satellite that transmits or processes the data.
-    # Ground energy is excluded here because ground processing defines the
-    # objective rather than a bounded on-board resource.
+    # Ground energy is excluded because ground processing defines the objective
+    # rather than a bounded on-board resource.
     for node_time, budget in instance.energy_budgets_j.items():
         physical, time = node_time
         row = np.zeros(n_variables, dtype=float)
@@ -136,9 +115,8 @@ def solve_reference_ilp(instance: OECInstance) -> ReferenceSolution:
             lower.append(-np.inf)
             upper.append(float(budget))
 
-    A = np.vstack(rows)
     constraints = LinearConstraint(
-        A,
+        np.vstack(rows),
         lb=np.asarray(lower, dtype=float),
         ub=np.asarray(upper, dtype=float),
     )
@@ -191,9 +169,9 @@ def ordered_service_path(
 ) -> tuple[str, ...]:
     """Return selected edge names in path order.
 
-    This helper intentionally raises when the selected subgraph does not define
-    one unambiguous source-to-destination path.  The strict behavior is useful
-    for regression tests because it exposes accidental cycles or branching.
+    The helper raises when the selected subgraph does not define one
+    unambiguous source-to-destination path.  This strict behavior exposes
+    accidental cycles, branches or disconnected components during validation.
     """
 
     service = next(
