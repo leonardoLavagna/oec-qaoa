@@ -269,7 +269,27 @@ def main() -> None:
         & (pool["decomposition_gap"].abs() <= 1e-9)
         & (pool["reference_objective"] > 1e-9)
     ]
-    print(f"Zero-gap reductions: {len(faithful)}")
+    print(f"Zero-gap positive-objective reductions: {len(faithful)}")
+    if not faithful.empty:
+        print(
+            "Positive zero-gap logical-variable range: "
+            f"{faithful['logical_variables'].min():.0f}-"
+            f"{faithful['logical_variables'].max():.0f}"
+        )
+        print("\nSmallest positive zero-gap candidates:")
+        diagnostic_columns = [
+            "instance",
+            "K",
+            "reference_objective",
+            "logical_variables",
+            "quadratic_couplings",
+            "qubo_density",
+        ]
+        print(
+            faithful.sort_values(
+                ["logical_variables", "quadratic_couplings", "K"]
+            )[diagnostic_columns].head(20).to_string(index=False)
+        )
 
     if not selected.empty:
         print("\n=== Selected ideal-QAOA benchmarks ===")
