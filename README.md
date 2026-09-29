@@ -14,7 +14,8 @@ OEC reference model
     -> path-based reduction
     -> resource-scaling analysis
     -> ideal QAOA
-    -> finite-sampling and, if useful, noise/hardware studies
+    -> finite-sampling
+    -> circuit and hardware-resource analysis
 ```
 
 The first implementation milestone is intentionally classical. It establishes deterministic reference OEC instances and exact solutions against which the later QUBO formulations will be checked.
@@ -35,6 +36,7 @@ The first implementation milestone is intentionally classical. It establishes de
 - [x] Path-based reduction
 - [x] Resource scaling
 - [x] QAOA benchmarks
-- [ ] Finite-sampling/noise analysis
+- [x] Finite-sampling analysis
+- [ ] Circuit/hardware-resource analysis
 
 The manuscript remains frozen while the simulations are developed. Numerical statements will be transferred to the paper only after the corresponding implementation and regression checks have been reviewed.
