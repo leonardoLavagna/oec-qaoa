@@ -19,8 +19,8 @@ RESULTS = ROOT / "results" / "qaoa"
 RESULTS.mkdir(parents=True, exist_ok=True)
 
 DEPTHS = [1, 2, 3, 4]
-RESTART_SEEDS = [101, 202, 303]
-MAXITER = 100
+RESTART_SEEDS = [101, 202, 303, 404, 505]
+MAXITER = 200
 
 
 def main() -> None:
