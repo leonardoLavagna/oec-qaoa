@@ -32,7 +32,7 @@ The first implementation milestone is intentionally classical. It establishes de
 - [x] Repository and reproducibility baseline
 - [x] Canonical OEC reference model
 - [x] Direct edge-QUBO
-- [ ] Path-based reduction
+- [x] Path-based reduction
 - [ ] Resource scaling
 - [ ] QAOA benchmarks
 - [ ] Finite-sampling/noise analysis
