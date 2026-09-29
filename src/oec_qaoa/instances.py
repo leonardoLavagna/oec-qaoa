@@ -152,3 +152,127 @@ def canonical_c1() -> OECInstance:
         resource_capacities_mb=capacities,
         energy_budgets_j=energy_budgets,
     )
+
+
+
+def canonical_c2() -> OECInstance:
+    """Return the routing-and-processing validation instance C2.
+
+    C2 extends the first canonical problem by giving each service two relay
+    choices.  Shared processing and downlink capacities make the route and the
+    processing location interdependent: h0 can use either relay but can only be
+    processed on R1, whereas h1 can be processed on either relay.  The unique
+    zero-ground-energy optimum routes h0 through R1 and h1 through R2, so the
+    instance tests genuine route selection in addition to processing placement.
+    """
+
+    services = (
+        Service(
+            name="h0",
+            source="S0",
+            generation_time=0,
+            deadline=3,
+            unprocessed_mb=4.0,
+            processed_mb=1.0,
+        ),
+        Service(
+            name="h1",
+            source="S3",
+            generation_time=0,
+            deadline=3,
+            unprocessed_mb=3.0,
+            processed_mb=1.0,
+        ),
+    )
+
+    edges: list[Edge] = []
+
+    # At acquisition time each source can reach either relay.
+    for source in ("S0", "S3"):
+        for relay in ("R1", "R2"):
+            edges.append(
+                Edge(
+                    f"tx_{source}_{relay}_t0_p0",
+                    _n(source, 0, 0),
+                    _n(relay, 0, 0),
+                    "transmission",
+                    f"tx_{source}_{relay}_t0",
+                    0.05,
+                )
+            )
+
+    # Storage advances the services to the processing/downlink cycles.
+    for t in range(3):
+        for physical in ("S0", "S3", "R1", "R2", "G"):
+            for p in (0, 1):
+                edges.append(
+                    Edge(
+                        f"st_{physical}_t{t}_p{p}",
+                        _n(physical, t, p),
+                        _n(physical, t + 1, p),
+                        "storage",
+                        f"mem_{physical}_t{t}",
+                        0.0,
+                    )
+                )
+
+    for relay in ("R1", "R2"):
+        edges.append(
+            Edge(
+                f"proc_{relay}_t1",
+                _n(relay, 1, 0),
+                _n(relay, 1, 1),
+                "processing",
+                f"proc_{relay}_t1",
+                1.0,
+            )
+        )
+
+    # Both relays can downlink processed or unprocessed data at t=2.
+    for relay in ("R1", "R2"):
+        for p in (0, 1):
+            edges.append(
+                Edge(
+                    f"tx_{relay}_G_t2_p{p}",
+                    _n(relay, 2, p),
+                    _n("G", 2, p),
+                    "transmission",
+                    f"downlink_{relay}_G_t2",
+                    0.05,
+                )
+            )
+
+    edges.append(
+        Edge(
+            "proc_G_t3",
+            _n("G", 3, 0),
+            _n("G", 3, 1),
+            "processing",
+            "proc_G_t3",
+            1.0,
+        )
+    )
+
+    capacities = {
+        "tx_S0_R1_t0": 4.0,
+        "tx_S0_R2_t0": 4.0,
+        "tx_S3_R1_t0": 3.0,
+        "tx_S3_R2_t0": 3.0,
+        "proc_R1_t1": 4.0,
+        "proc_R2_t1": 3.0,
+        "downlink_R1_G_t2": 4.0,
+        "downlink_R2_G_t2": 4.0,
+        "proc_G_t3": 100.0,
+    }
+    for t in range(3):
+        for physical in ("S0", "S3", "R1", "R2", "G"):
+            capacities[f"mem_{physical}_t{t}"] = 100.0
+
+    return OECInstance(
+        name="C2",
+        ground_node="G",
+        services=services,
+        edges=tuple(edges),
+        resource_capacities_mb=capacities,
+        energy_budgets_j={},
+    )
