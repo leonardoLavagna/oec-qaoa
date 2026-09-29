@@ -1,7 +1,9 @@
 """Tools for the OEC-QAOA numerical study."""
 
 from .edge_qubo import QUBOModel, QUBOSolution, build_edge_qubo, solve_qubo_exact
+from .generators import SyntheticConfig, synthetic_relay_instance
 from .instances import canonical_c1, canonical_c2
+from .metrics import QUBOResourceMetrics, qubo_resource_metrics
 from .model import Edge, OECInstance, Service, StateNode
 from .path_qubo import (
     PathQUBOModel,
@@ -27,7 +29,9 @@ __all__ = [
     "PathSelectionSolution",
     "QUBOModel",
     "QUBOSolution",
+    "QUBOResourceMetrics",
     "Service",
+    "SyntheticConfig",
     "StateNode",
     "build_edge_qubo",
     "build_path_qubo",
@@ -38,5 +42,7 @@ __all__ = [
     "enumerate_candidate_paths",
     "solve_path_qubo_exact",
     "solve_path_selection",
+    "qubo_resource_metrics",
     "solve_qubo_exact",
+    "synthetic_relay_instance",
 ]
