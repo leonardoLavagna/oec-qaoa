@@ -6,39 +6,25 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .generators import SyntheticConfig, synthetic_relay_instance
+from .generators import compact_constrained_instance
 from .path_qubo import PathQUBOModel, build_path_qubo
 from .path_reduction import CandidatePath, candidate_sets
 
 
 @dataclass(frozen=True)
 class QAOABenchmark:
+    """One frozen compact benchmark used in the variational study."""
+
     benchmark_id: str
-    config: SyntheticConfig
+    n_services: int
+    processing_capacity_mb: float
     k: int
 
 
 FROZEN_QAOA_BENCHMARKS = (
-    QAOABenchmark(
-        "B1",
-        SyntheticConfig(3, 3, 2, 0.8, 20260929),
-        2,
-    ),
-    QAOABenchmark(
-        "B2",
-        SyntheticConfig(3, 3, 2, 1.2, 20260929),
-        2,
-    ),
-    QAOABenchmark(
-        "B3",
-        SyntheticConfig(3, 3, 4, 1.0, 20260929),
-        2,
-    ),
-    QAOABenchmark(
-        "B4",
-        SyntheticConfig(3, 4, 2, 1.2, 20260929),
-        2,
-    ),
+    QAOABenchmark("B1", n_services=2, processing_capacity_mb=3.0, k=2),
+    QAOABenchmark("B2", n_services=2, processing_capacity_mb=4.0, k=2),
+    QAOABenchmark("B3", n_services=3, processing_capacity_mb=4.0, k=2),
 )
 
 
@@ -47,7 +33,10 @@ def build_frozen_benchmark(
 ) -> tuple[object, dict[str, tuple[CandidatePath, ...]], PathQUBOModel]:
     """Reconstruct one frozen benchmark deterministically."""
 
-    instance = synthetic_relay_instance(benchmark.config)
+    instance = compact_constrained_instance(
+        n_services=benchmark.n_services,
+        processing_capacity_mb=benchmark.processing_capacity_mb,
+    )
     all_paths = candidate_sets(instance)
     retained = {
         service: paths[: benchmark.k]
@@ -65,7 +54,7 @@ def physical_feasibility_mask(
     """Return states whose semantic path choices satisfy all physical resources.
 
     Slack variables are marginalized because they are encoding variables rather
-    than physical decisions.  A computational-basis state is counted as
+    than physical decisions. A computational-basis state is counted as
     physically feasible when its semantic prefix selects exactly one retained
     path for every service and the selected paths jointly satisfy every shared
     capacity and energy bound.
