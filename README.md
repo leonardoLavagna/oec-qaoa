@@ -37,6 +37,6 @@ The first implementation milestone is intentionally classical. It establishes de
 - [x] Resource scaling
 - [x] QAOA benchmarks
 - [x] Finite-sampling analysis
-- [ ] Circuit/hardware-resource analysis
+- [x] Circuit/hardware-resource analysis
 
 The manuscript remains frozen while the simulations are developed. Numerical statements will be transferred to the paper only after the corresponding implementation and regression checks have been reviewed.
