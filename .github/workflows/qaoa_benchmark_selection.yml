@@ -1,4 +1,5 @@
 name: qaoa-benchmark-selection
+# rerun after benchmark diagnostics
 
 on:
   push:
