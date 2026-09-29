@@ -191,8 +191,16 @@ def optimize_qaoa(
     feasible_mask: np.ndarray,
     optimizer: str = "COBYLA",
     maxiter: int = 150,
+    normalize_cost: bool = True,
 ) -> QAOAResult:
-    """Optimize one ideal QAOA run from a deterministic random initialization."""
+    """Optimize one ideal QAOA run from a deterministic random initialization.
+
+    A positive rescaling of the complete cost Hamiltonian leaves its eigenstates
+    and minimizers unchanged but changes the numerical scale of the phase
+    angles.  By default the Hamiltonian is divided by the largest non-zero
+    linear or quadratic QUBO coefficient before variational optimization.  All
+    reported energies remain in the original, unscaled QUBO units.
+    """
 
     if depth < 1:
         raise ValueError("depth must be positive")
@@ -200,6 +208,19 @@ def optimize_qaoa(
     energies = basis_energies(model)
     optimum = float(energies.min())
     optimal_mask = np.isclose(energies, optimum, atol=1e-9)
+
+    coefficients = [
+        abs(float(value))
+        for value in model.linear
+        if abs(float(value)) > 1e-12
+    ]
+    coefficients.extend(
+        abs(float(value))
+        for value in model.quadratic.values()
+        if abs(float(value)) > 1e-12
+    )
+    cost_scale = max(coefficients) if (normalize_cost and coefficients) else 1.0
+    phase_energies = energies / cost_scale
 
     rng = np.random.default_rng(seed)
     initial = np.concatenate(
@@ -214,7 +235,7 @@ def optimize_qaoa(
     def objective(parameters: np.ndarray) -> float:
         nonlocal evaluations
         evaluations += 1
-        return expected_energy(parameters, energies, depth)
+        return expected_energy(parameters, phase_energies, depth)
 
     result = minimize(
         objective,
@@ -225,7 +246,7 @@ def optimize_qaoa(
 
     parameters = np.asarray(result.x, dtype=float)
     state = qaoa_statevector(
-        energies,
+        phase_energies,
         parameters[:depth],
         parameters[depth:],
     )
